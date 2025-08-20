@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import cl.camodev.wosbot.emulator.Emulator;
+import cl.camodev.utiles.PlatformUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,14 +27,16 @@ public class LDPlayerEmulator extends Emulator {
 
     @Override
     public void launchEmulator(String emulatorNumber) {
-        String[] command = { consolePath + File.separator + "ldconsole.exe", "launch", "--index", emulatorNumber };
+        String executableName = getExecutableName("ldconsole");
+        String[] command = { consolePath + File.separator + executableName, "launch", "--index", emulatorNumber };
         executeCommand(command);
         logger.info("LDPlayer launched at index {}", emulatorNumber);
     }
 
     @Override
     public void closeEmulator(String emulatorNumber) {
-        String[] command = { consolePath + File.separator + "ldconsole.exe", "quit", "--index", emulatorNumber };
+        String executableName = getExecutableName("ldconsole");
+        String[] command = { consolePath + File.separator + executableName, "quit", "--index", emulatorNumber };
         executeCommand(command);
         logger.info("LDPlayer closed at index {}", emulatorNumber);
     }
@@ -41,7 +44,8 @@ public class LDPlayerEmulator extends Emulator {
     @Override
     public boolean isRunning(String emulatorNumber) {
         try {
-            String[] command = { consolePath + File.separator + "ldconsole.exe", "isrunning", "--index", emulatorNumber };
+            String executableName = getExecutableName("ldconsole");
+            String[] command = { consolePath + File.separator + executableName, "isrunning", "--index", emulatorNumber };
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(new File(consolePath).getParentFile());
 
@@ -67,5 +71,12 @@ public class LDPlayerEmulator extends Emulator {
         } catch (IOException | InterruptedException e) {
             logger.error("Error executing command", e);
         }
+    }
+    
+    /**
+     * Gets the appropriate executable name based on the operating system
+     */
+    private String getExecutableName(String baseName) {
+        return PlatformUtil.getExecutableName(baseName);
     }
 }

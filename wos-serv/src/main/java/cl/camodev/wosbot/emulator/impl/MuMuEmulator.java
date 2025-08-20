@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import cl.camodev.wosbot.emulator.Emulator;
+import cl.camodev.utiles.PlatformUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,14 +26,16 @@ public class MuMuEmulator extends Emulator {
 
 	@Override
 	public void launchEmulator(String emulatorNumber) {
-		String[] command = { consolePath + File.separator + "MuMuManager.exe", "api", "-v", emulatorNumber, "launch_player" };
+		String executableName = getExecutableName("MuMuManager");
+		String[] command = { consolePath + File.separator + executableName, "api", "-v", emulatorNumber, "launch_player" };
 		executeCommand(command);
         logger.info("MuMu launched at index {}", emulatorNumber);
 	}
 
 	@Override
 	public void closeEmulator(String emulatorNumber) {
-		String[] command = { consolePath + File.separator + "MuMuManager.exe", "api", "-v", emulatorNumber, "shutdown_player" };
+		String executableName = getExecutableName("MuMuManager");
+		String[] command = { consolePath + File.separator + executableName, "api", "-v", emulatorNumber, "shutdown_player" };
 		executeCommand(command);
         logger.info("MuMu closed at index {}", emulatorNumber);
 	}
@@ -40,7 +43,8 @@ public class MuMuEmulator extends Emulator {
 	@Override
 	public boolean isRunning(String emulatorNumber) {
 		try {
-			String[] command = { consolePath + File.separator + "MuMuManager.exe", "api", "-v", emulatorNumber, "player_state" };
+			String executableName = getExecutableName("MuMuManager");
+			String[] command = { consolePath + File.separator + executableName, "api", "-v", emulatorNumber, "player_state" };
 			ProcessBuilder pb = new ProcessBuilder(command);
 			pb.directory(new File(consolePath).getParentFile());
 
@@ -70,5 +74,12 @@ public class MuMuEmulator extends Emulator {
 		} catch (IOException | InterruptedException e) {
 			logger.error("Error executing command", e);
 		}
+	}
+	
+	/**
+	 * Gets the appropriate executable name based on the operating system
+	 */
+	private String getExecutableName(String baseName) {
+		return PlatformUtil.getExecutableName(baseName);
 	}
 }

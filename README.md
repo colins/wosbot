@@ -2,7 +2,7 @@
 
 **The development of the project is currently on pause due some personal issues**
 
-A bot for automating tasks in **Whiteout Survival**. This project is a work in progress and is developed in my free time. If you have any requests or suggestions, feel free to ask—I’ll try to respond as soon as possible.
+A bot for automating tasks in **Whiteout Survival**. This project is a work in progress and is developed in my free time. If you have any requests or suggestions, feel free to ask—I'll try to respond as soon as possible.
 
 [![](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/cearivera1z)
 [![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/Wk6YSr6mUp)
@@ -40,12 +40,17 @@ A bot for automating tasks in **Whiteout Survival**. This project is a work in p
 
 ## ⚙️ Configuration
 
-The bot is designed to run on **Mumu Player** with the following settings:
+The bot is designed to run on **Android emulators** with the following settings:
 
 - **Resolution:** 720x1280 (320 DPI)  
 - **CPU:** 2 Cores  
 - **RAM:** 2GB 
 - **Lang:** ENGLISH
+
+**Supported Emulators:**
+- MuMu Player (Windows/macOS)
+- MEmu Player (Windows)
+- LDPlayer (Windows)
 
 ---
 
@@ -66,6 +71,22 @@ java -jar wos-bot-x.x.x.jar
 
 #### Without Logs
 Simply double-click `wos-bot-x.x.x.jar`.
+
+---
+
+## 🍎 macOS Compatibility
+
+This project has been updated to support macOS. Key changes include:
+
+- **ADB**: Uses macOS-compatible ADB binary
+- **OpenCV**: Uses macOS-compatible native libraries
+- **Emulator paths**: Updated for macOS file system
+- **File extensions**: Handles both Windows and macOS executables
+
+**macOS Requirements:**
+- macOS 10.14 or later
+- Java 21 or later
+- Android emulator (MuMu Player recommended for macOS)
 
 ---
 

@@ -16,6 +16,7 @@ import java.util.function.Function;
 import javax.imageio.ImageIO;
 
 import cl.camodev.wosbot.ex.ADBConnectionException;
+import cl.camodev.utiles.PlatformUtil;
 import com.android.ddmlib.*;
 
 import cl.camodev.wosbot.ot.DTOPoint;
@@ -55,28 +56,36 @@ public abstract class Emulator {
 	}
 
 	/**
-	 * Gets the ADB executable path from the project's execution directory.
+	 * Gets the project's ADB path, checking multiple possible locations.
 	 * @return Path to the ADB executable
 	 */
 	private String getProjectAdbPath() {
 		// Get the current working directory (where the application is running)
 		String currentDir = System.getProperty("user.dir");
+		String adbExecutable = getAdbExecutableName();
 
 		// Check if we're in the wos-hmi directory or the root project directory
-		File adbFile = new File(currentDir, "adb" + File.separator + "adb.exe");
+		File adbFile = new File(currentDir, "adb" + File.separator + adbExecutable);
 		if (adbFile.exists()) {
 			return adbFile.getAbsolutePath();
 		}
 
 		// Try the wos-hmi subdirectory if we're in the root
-		adbFile = new File(currentDir, "wos-hmi" + File.separator + "adb" + File.separator + "adb.exe");
+		adbFile = new File(currentDir, "wos-hmi" + File.separator + "adb" + File.separator + adbExecutable);
 		if (adbFile.exists()) {
 			return adbFile.getAbsolutePath();
 		}
 
 		// Fallback to the original console path if project ADB not found
 		logger.warn("Project ADB not found, falling back to console path: {}", consolePath);
-		return consolePath + File.separator + "adb.exe";
+		return consolePath + File.separator + adbExecutable;
+	}
+	
+	/**
+	 * Gets the appropriate ADB executable name based on the operating system
+	 */
+	private String getAdbExecutableName() {
+		return PlatformUtil.getAdbExecutableName();
 	}
 
 	/**

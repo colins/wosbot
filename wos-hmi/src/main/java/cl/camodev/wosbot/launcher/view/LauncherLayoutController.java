@@ -49,6 +49,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import cl.camodev.utiles.PlatformUtil;
 
 public class LauncherLayoutController implements IProfileLoadListener {
 
@@ -354,11 +355,33 @@ public class LauncherLayoutController implements IProfileLoadListener {
 
 	private void initializeExternalLibraries() {
 		try {
-			ImageSearchUtil.loadNativeLibrary("/native/opencv/opencv_java4110.dll");
+			String libraryPath = getOpenCVLibraryPath();
+			ImageSearchUtil.loadNativeLibrary(libraryPath);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
+	}
+	
+	/**
+	 * Gets the appropriate OpenCV native library path based on the operating system
+	 */
+	private String getOpenCVLibraryPath() {
+		if (PlatformUtil.isWindows()) {
+			return "/native/opencv/opencv_java4110.dll";
+		} else if (PlatformUtil.isMacOS()) {
+			if (PlatformUtil.getArch() == PlatformUtil.ARCH.ARM64) {
+				return "/native/opencv/macos-arm64/libopencv_java4110.dylib";
+			} else {
+				return "/native/opencv/macos-x86_64/libopencv_java4110.dylib";
+			}
+		} else {
+			// Linux and other Unix-like systems
+			if (PlatformUtil.getArch() == PlatformUtil.ARCH.ARM64) {
+				return "/native/opencv/linux-arm64/libopencv_java4110.so";
+			} else {
+				return "/native/opencv/linux-x86_64/libopencv_java4110.so";
+			}
+		}
 	}
 
 	private void initializeModules() {
