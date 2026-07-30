@@ -360,6 +360,10 @@ public class StaminaHelper {
 
         if (marchingTime != null) {
             long seconds = marchingTime.getSeconds();
+            if (seconds > 1800) {
+                logWarning("Parsed unrealistically high travel time (" + seconds + "s). Treating as OCR error.");
+                return 0;
+            }
             logDebug("Travel time: " + seconds + " seconds");
             return seconds;
         }

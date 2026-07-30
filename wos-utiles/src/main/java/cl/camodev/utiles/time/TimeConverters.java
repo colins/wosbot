@@ -83,13 +83,13 @@ public final class TimeConverters {
             if (duration != null)
                 return addDays(duration, days);
 
-            // Try HH:mm with colon
-            duration = tryParseHHMMColon(timePart);
+            // Try mm:ss with colon (prefer minutes:seconds over hours:minutes for 2-component times)
+            duration = tryParseMMSSColon(timePart);
             if (duration != null)
                 return addDays(duration, days);
 
-            // Try mm:ss with colon
-            duration = tryParseMMSSColon(timePart);
+            // Try HH:mm with colon
+            duration = tryParseHHMMColon(timePart);
             if (duration != null)
                 return addDays(duration, days);
 
@@ -261,22 +261,18 @@ public final class TimeConverters {
             int firstPart = Integer.parseInt(timePart.substring(0, 2));
             int secondPart = Integer.parseInt(timePart.substring(2, 4));
 
-            // Validate second part for both interpretations
+            // Validate second part
             if (secondPart < 0 || secondPart > 59) {
                 return null;
             }
 
-            // If first part > 23, must be mm:ss
-            if (firstPart > 23) {
-                if (firstPart > 59) {
-                    return null;
-                }
-                // Interpret as mm:ss
-                return Duration.ofMinutes(firstPart).plusSeconds(secondPart);
+            // Validate first part for mm:ss
+            if (firstPart < 0 || firstPart > 59) {
+                return null;
             }
 
-            // First part ≤ 23, interpret as HH:mm
-            return Duration.ofHours(firstPart).plusMinutes(secondPart);
+            // Prefer mm:ss for 4-digit compact game timers/travel time
+            return Duration.ofMinutes(firstPart).plusSeconds(secondPart);
 
         } catch (Exception e) {
             return null;

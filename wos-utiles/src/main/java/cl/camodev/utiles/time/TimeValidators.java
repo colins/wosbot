@@ -76,9 +76,9 @@ public final class TimeValidators {
             // Try all supported formats
             if (isValidHHMMSSColon(timePart))
                 return true;
-            if (isValidHHMMColon(timePart))
-                return true;
             if (isValidMMSSColon(timePart))
+                return true;
+            if (isValidHHMMColon(timePart))
                 return true;
             if (isValidHHMMSS(timePart))
                 return true;
