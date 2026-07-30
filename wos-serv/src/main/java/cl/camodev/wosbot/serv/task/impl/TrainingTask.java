@@ -336,6 +336,7 @@ public class TrainingTask extends DelayedTask {
      */
     private List<QueueInfo> analyzeAllQueues() {
         marchHelper.openLeftMenuCitySection(true);
+        sleepTask(500);
         List<QueueInfo> result = new ArrayList<>();
 
         emuManager.captureScreenshotViaADB(EMULATOR_NUMBER);
@@ -379,7 +380,7 @@ public class TrainingTask extends DelayedTask {
 
             logInfo("Retry attempt " + attempt + "/" + MAX_QUEUE_STATUS_RETRIES);
 
-            marchHelper.openLeftMenuCitySection(true);
+            sleepTask(500);
             emuManager.captureScreenshotViaADB(EMULATOR_NUMBER);
 
             unknownIndices = retryUnknownQueuesOnce(initialResults, unknownIndices);
@@ -469,6 +470,7 @@ public class TrainingTask extends DelayedTask {
      */
     private QueueInfo analyzeQueueState(DTOArea queueArea, TroopType troopType) {
         DTOTesseractSettings[] settingsToTry = {
+                WHITE_DURATION,
                 WHITE_SETTINGS,
                 WHITE_NUMBERS,
                 ORANGE_SETTINGS,
