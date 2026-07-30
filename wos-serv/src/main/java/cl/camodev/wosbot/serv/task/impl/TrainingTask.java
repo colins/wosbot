@@ -169,6 +169,8 @@ public class TrainingTask extends DelayedTask {
     private LocalDateTime appointmentTime;
     private final TextRecognitionRetrier<LocalDateTime> trainingTimeHelper;
 
+    private boolean anyReadyQueueFailed = false;
+
     // ===============================
     // CONSTRUCTOR
     // ===============================
@@ -1005,6 +1007,7 @@ public class TrainingTask extends DelayedTask {
      */
     private List<LocalDateTime> trainAllReadyQueues(List<QueueInfo> readyQueues) {
         List<LocalDateTime> completionTimes = new ArrayList<>();
+        anyReadyQueueFailed = false;
 
         for (QueueInfo queue : readyQueues) {
             troopTypeBeingTrained = queue.type();
@@ -1012,6 +1015,8 @@ public class TrainingTask extends DelayedTask {
 
             if (completionTime != null) {
                 completionTimes.add(completionTime);
+            } else {
+                anyReadyQueueFailed = true;
             }
         }
 
@@ -1036,7 +1041,8 @@ public class TrainingTask extends DelayedTask {
         logInfo("Preparing to train " + queue.type().name());
         tapRandomPoint(areaToTap.topLeft(), areaToTap.bottomRight(), 1, 500);
 
-        tapRandomPoint(TRAINING_CAMP_TAP_MIN, TRAINING_CAMP_TAP_MAX, 10, 100);
+        // Wait for camera pan animation and building popup to settle
+        sleepTask(800);
 
         if (!openTrainingInterface()) {
             return handleTrainingButtonNotFound(queue);
@@ -1071,7 +1077,7 @@ public class TrainingTask extends DelayedTask {
     private boolean openTrainingInterface() {
         DTOImageSearchResult trainingButton = templateSearchHelper.searchTemplate(
                 BUILDING_BUTTON_TRAIN,
-                SearchConfigConstants.DEFAULT_SINGLE);
+                SearchConfigConstants.SINGLE_WITH_RETRIES);
 
         if (!trainingButton.isFound()) {
             return false;
@@ -1788,6 +1794,16 @@ public class TrainingTask extends DelayedTask {
                 .filter(Objects::nonNull)
                 .min(LocalDateTime::compareTo)
                 .orElse(LocalDateTime.now().plusMinutes(TRAINING_BUTTON_RETRY_MINUTES));
+
+        if (anyReadyQueueFailed) {
+            LocalDateTime retryTime = LocalDateTime.now().plusMinutes(TRAINING_BUTTON_RETRY_MINUTES);
+            if (earliest.isAfter(retryTime)) {
+                earliest = retryTime;
+                logInfo(String.format("At least one ready queue failed to train. Rescheduling retry in %d minutes at %s.",
+                        TRAINING_BUTTON_RETRY_MINUTES,
+                        earliest.format(DATETIME_FORMATTER)));
+            }
+        }
 
         // If ministry appointment enabled and earliest completion is very close to appointment,
         // wait for appointment to maximize the bonus window instead of training more limited troops
