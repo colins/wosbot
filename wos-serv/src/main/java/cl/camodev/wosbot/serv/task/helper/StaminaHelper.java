@@ -360,8 +360,17 @@ public class StaminaHelper {
 
         if (marchingTime != null) {
             long seconds = marchingTime.getSeconds();
-            if (seconds > 1800) {
-                logWarning("Parsed unrealistically high travel time (" + seconds + "s). Treating as OCR error.");
+
+            // Game travel time format on march screen is 00:MM:SS or MM:SS.
+            // OCR frequently misreads leading "00" hours as "10" or "01", resulting in >= 3600 seconds.
+            if (seconds >= 3600) {
+                long adjustedSeconds = seconds % 3600;
+                logDebug("Stripped misread hours from travel time: " + seconds + "s -> " + adjustedSeconds + "s");
+                seconds = adjustedSeconds;
+            }
+
+            if (seconds > 1800 || seconds <= 0) {
+                logWarning("Parsed invalid travel time (" + seconds + "s). Treating as OCR error.");
                 return 0;
             }
             logDebug("Travel time: " + seconds + " seconds");
