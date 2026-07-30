@@ -190,6 +190,7 @@ public class PolarTerrorHuntingTask extends DelayedTask {
         // Select flag if needed
         if (useFlag) {
             marchHelper.selectFlag(flagNumber);
+            sleepTask(300);
         }
 
         // Parse travel time

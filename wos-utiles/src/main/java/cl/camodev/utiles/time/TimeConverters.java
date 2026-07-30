@@ -35,6 +35,9 @@ public final class TimeConverters {
 
     private static final DateTimeFormatter STRICT_HH_MM_SS = DateTimeFormatter.ofPattern("HH:mm:ss");
 
+    private static final Pattern PATTERN_HH_MM_SS_COLON = Pattern.compile("(\\d{1,2}):(\\d{1,2}):(\\d{1,2})");
+    private static final Pattern PATTERN_TWO_COLON_TIME = Pattern.compile("(\\d{1,2}):(\\d{1,2})");
+
     // Pattern for day prefix (e.g., "2d", "24d")
     private static final Pattern DAY_PREFIX_PATTERN = Pattern.compile("^(\\d+)d(.+)$", Pattern.CASE_INSENSITIVE);
 
@@ -154,14 +157,26 @@ public final class TimeConverters {
     }
 
     /**
-     * Tries to parse HH:mm:ss format with colons (e.g., "13:45:30").
+     * Tries to parse HH:mm:ss format with colons (e.g., "13:45:30" or "0:01:23").
      */
     private static Duration tryParseHHMMSSColon(String timePart) {
         try {
-            LocalTime t = LocalTime.parse(timePart, STRICT_HH_MM_SS);
-            return Duration.ofHours(t.getHour())
-                    .plusMinutes(t.getMinute())
-                    .plusSeconds(t.getSecond());
+            Matcher matcher = PATTERN_HH_MM_SS_COLON.matcher(timePart);
+            if (!matcher.find()) {
+                return null;
+            }
+
+            int hours = Integer.parseInt(matcher.group(1));
+            int minutes = Integer.parseInt(matcher.group(2));
+            int seconds = Integer.parseInt(matcher.group(3));
+
+            if (hours < 0 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) {
+                return null;
+            }
+
+            return Duration.ofHours(hours)
+                    .plusMinutes(minutes)
+                    .plusSeconds(seconds);
         } catch (Exception e) {
             return null;
         }
@@ -172,14 +187,13 @@ public final class TimeConverters {
      */
     private static Duration tryParseHHMMColon(String timePart) {
         try {
-            // Check if it matches HH:mm pattern
-            if (!timePart.matches("\\d{1,2}:\\d{2}")) {
+            Matcher matcher = PATTERN_TWO_COLON_TIME.matcher(timePart);
+            if (!matcher.find()) {
                 return null;
             }
 
-            String[] parts = timePart.split(":");
-            int hours = Integer.parseInt(parts[0]);
-            int minutes = Integer.parseInt(parts[1]);
+            int hours = Integer.parseInt(matcher.group(1));
+            int minutes = Integer.parseInt(matcher.group(2));
 
             if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
                 return null;
@@ -196,14 +210,13 @@ public final class TimeConverters {
      */
     private static Duration tryParseMMSSColon(String timePart) {
         try {
-            // Check if it matches mm:ss pattern
-            if (!timePart.matches("\\d{1,2}:\\d{2}")) {
+            Matcher matcher = PATTERN_TWO_COLON_TIME.matcher(timePart);
+            if (!matcher.find()) {
                 return null;
             }
 
-            String[] parts = timePart.split(":");
-            int minutes = Integer.parseInt(parts[0]);
-            int seconds = Integer.parseInt(parts[1]);
+            int minutes = Integer.parseInt(matcher.group(1));
+            int seconds = Integer.parseInt(matcher.group(2));
 
             if (minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) {
                 return null;

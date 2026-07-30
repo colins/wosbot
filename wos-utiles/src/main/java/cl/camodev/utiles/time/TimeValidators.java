@@ -26,6 +26,7 @@ public final class TimeValidators {
     private static final DateTimeFormatter STRICT_HH_MM_SS = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     // Regex patterns for different formats
+    private static final Pattern PATTERN_HH_MM_SS_COLON = Pattern.compile("(\\d{1,2}):(\\d{1,2}):(\\d{1,2})");
     private static final Pattern PATTERN_HH_MM_COLON = Pattern.compile("(\\d{1,2}):(\\d{2})");
     private static final Pattern PATTERN_MM_SS_COLON = Pattern.compile("(\\d{1,2}):(\\d{2})");
     private static final Pattern PATTERN_HHMMSS = Pattern.compile("(\\d{6})");
@@ -115,15 +116,18 @@ public final class TimeValidators {
     }
 
     /**
-     * Validates HH:mm:ss format (e.g., "13:45:30").
+     * Validates HH:mm:ss format (e.g., "13:45:30" or "0:01:23").
      */
     private static boolean isValidHHMMSSColon(String timePart) {
-        try {
-            LocalTime.parse(timePart, STRICT_HH_MM_SS);
-            return true;
-        } catch (Exception e) {
+        Matcher matcher = PATTERN_HH_MM_SS_COLON.matcher(timePart);
+        if (!matcher.find())
             return false;
-        }
+
+        int hours = Integer.parseInt(matcher.group(1));
+        int minutes = Integer.parseInt(matcher.group(2));
+        int seconds = Integer.parseInt(matcher.group(3));
+
+        return hours >= 0 && minutes >= 0 && minutes <= 59 && seconds >= 0 && seconds <= 59;
     }
 
     /**
@@ -131,7 +135,7 @@ public final class TimeValidators {
      */
     private static boolean isValidHHMMColon(String timePart) {
         Matcher matcher = PATTERN_HH_MM_COLON.matcher(timePart);
-        if (!matcher.matches())
+        if (!matcher.find())
             return false;
 
         int hours = Integer.parseInt(matcher.group(1));
@@ -145,7 +149,7 @@ public final class TimeValidators {
      */
     private static boolean isValidMMSSColon(String timePart) {
         Matcher matcher = PATTERN_MM_SS_COLON.matcher(timePart);
-        if (!matcher.matches())
+        if (!matcher.find())
             return false;
 
         int minutes = Integer.parseInt(matcher.group(1));
