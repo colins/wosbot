@@ -21,9 +21,20 @@ public class ExplorationTask extends DelayedTask {
 	protected void execute() {
 		logInfo("Starting exploration task.");
 		tapRandomPoint(new DTOPoint(40, 1190), new DTOPoint(100, 1250));
-		sleepTask(500);
+		sleepTask(1000);
+
 		DTOImageSearchResult claimResult = templateSearchHelper.searchTemplate(
-				EnumTemplates.EXPLORATION_CLAIM, SearchConfigConstants.DEFAULT_SINGLE);
+				EnumTemplates.EXPLORATION_CLAIM, SearchConfigConstants.SINGLE_WITH_RETRIES);
+		if (!claimResult.isFound()) {
+			// Fallback click on the claim button position if template match threshold was marginally missed
+			logInfo("Claim template not found by threshold, tapping claim button area (560,900)-(670,940)...");
+			tapRandomPoint(new DTOPoint(560, 900), new DTOPoint(670, 940));
+			sleepTask(500);
+
+			claimResult = templateSearchHelper.searchTemplate(
+					EnumTemplates.EXPLORATION_CLAIM, SearchConfigConstants.SINGLE_WITH_RETRIES);
+		}
+
 		if (claimResult.isFound()) {
 			logInfo("Claiming exploration rewards...");
 			tapRandomPoint(new DTOPoint(560, 900), new DTOPoint(670, 940));
