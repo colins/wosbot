@@ -116,6 +116,33 @@ public class TrainingTask extends DelayedTask {
 
     private static final DTOPoint PROMOTION_CONFIRM_POINT = new DTOPoint(523, 900);
 
+    private static final DTOTesseractSettings STATE_TEXT_WHITE = DTOTesseractSettings.builder()
+            .setRemoveBackground(true)
+            .setTextColor(new Color(255, 255, 255))
+            .setReuseLastImage(true)
+            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+            .build();
+
+    private static final DTOTesseractSettings STATE_TEXT_ORANGE = DTOTesseractSettings.builder()
+            .setRemoveBackground(true)
+            .setTextColor(new Color(237, 138, 33))
+            .setReuseLastImage(true)
+            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+            .build();
+
+    private static final DTOTesseractSettings STATE_TEXT_GREEN = DTOTesseractSettings.builder()
+            .setRemoveBackground(true)
+            .setTextColor(new Color(0, 193, 0))
+            .setReuseLastImage(true)
+            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+            .build();
+
+    private static final DTOTesseractSettings STATE_TEXT_ANY = DTOTesseractSettings.builder()
+            .setRemoveBackground(false)
+            .setReuseLastImage(true)
+            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+            .build();
+
     private static final int MAX_QUEUE_STATUS_RETRIES = 3;
     private static final int MAX_TEMPLATE_SEARCH_ATTEMPTS = 3;
     private static final int SOON_READY_THRESHOLD_MINUTES = 3;
@@ -469,34 +496,61 @@ public class TrainingTask extends DelayedTask {
      *         applicable
      */
     private QueueInfo analyzeQueueState(DTOArea queueArea, TroopType troopType) {
-        DTOTesseractSettings[] settingsToTry = {
-                WHITE_DURATION,
-                WHITE_SETTINGS,
-                WHITE_NUMBERS,
-                ORANGE_SETTINGS,
-                GREEN_TEXT_SETTINGS
-        };
-
-        QueueInfo stateInfo = checkForStateKeywords(queueArea, troopType, settingsToTry);
+        QueueInfo stateInfo = checkForStateKeywords(queueArea, troopType);
         if (stateInfo != null) {
             return stateInfo;
         }
 
-        return checkForTrainingTime(queueArea, troopType, settingsToTry);
+        return checkForTrainingTime(queueArea, troopType);
+    }
+
+    private boolean isKnownStateKeyword(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return false;
+        }
+        String lower = text.trim().toLowerCase();
+        return isIdleText(lower) || isUpgradingText(lower) || isCompleteText(lower);
+    }
+
+    private boolean isIdleText(String lower) {
+        return lower.contains("idle") || lower.contains("1dle")
+                || lower.contains("ldle") || lower.contains("idie")
+                || lower.contains("id1e") || lower.contains("1d1e")
+                || lower.contains("i0le") || lower.contains("i1de")
+                || lower.contains("i1dle") || lower.contains("dle");
+    }
+
+    private boolean isUpgradingText(String lower) {
+        return lower.contains("upgrading") || lower.contains("upgrade")
+                || lower.contains("upgrad") || lower.contains("upgrad1ng")
+                || lower.contains("upgradin");
+    }
+
+    private boolean isCompleteText(String lower) {
+        return lower.contains("complete") || lower.contains("comp1ete")
+                || lower.contains("complet") || lower.contains("compl3te")
+                || lower.contains("c0mplete") || lower.contains("claim")
+                || lower.contains("finished") || lower.contains("ready")
+                || lower.contains("collect") || lower.contains("tap");
     }
 
     /**
      * Checks for state keywords (IDLE, UPGRADING, COMPLETE) in the queue area.
      * 
-     * @param queueArea     Screen area to check
-     * @param troopType     Type of troop for logging
-     * @param settingsToTry Array of OCR settings to attempt
+     * @param queueAreaScreen area to check
+     * @param troopType Type of troop for logging
      * @return QueueInfo if a keyword is found, null otherwise
      */
-    private QueueInfo checkForStateKeywords(
-            DTOArea queueArea,
-            TroopType troopType,
-            DTOTesseractSettings[] settingsToTry) {
+    private QueueInfo checkForStateKeywords(DTOArea queueArea, TroopType troopType) {
+        DTOTesseractSettings[] settingsToTry = {
+                STATE_TEXT_WHITE,
+                WHITE_SETTINGS,
+                STATE_TEXT_ORANGE,
+                ORANGE_SETTINGS,
+                STATE_TEXT_GREEN,
+                GREEN_TEXT_SETTINGS,
+                STATE_TEXT_ANY
+        };
 
         for (DTOTesseractSettings settings : settingsToTry) {
             try {
@@ -506,24 +560,24 @@ public class TrainingTask extends DelayedTask {
                         1,
                         300L,
                         settings,
-                        s -> !s.isEmpty(),
+                        this::isKnownStateKeyword,
                         s -> s);
 
                 if (text != null && !text.trim().isEmpty()) {
                     String lowerText = text.trim().toLowerCase();
 
-                    if (lowerText.contains("idle")) {
-                        logInfo(troopType + " queue is IDLE");
+                    if (isIdleText(lowerText)) {
+                        logInfo(troopType + " queue is IDLE (raw text: '" + text.trim() + "')");
                         return new QueueInfo(troopType, QueueStatus.IDLE, null);
                     }
 
-                    if (lowerText.contains("upgrading") || lowerText.contains("upgrade")) {
-                        logInfo(troopType + " queue is UPGRADING");
+                    if (isUpgradingText(lowerText)) {
+                        logInfo(troopType + " queue is UPGRADING (raw text: '" + text.trim() + "')");
                         return new QueueInfo(troopType, QueueStatus.UPGRADING, null);
                     }
 
-                    if (lowerText.contains("complete")) {
-                        logInfo(troopType + " queue is COMPLETE");
+                    if (isCompleteText(lowerText)) {
+                        logInfo(troopType + " queue is COMPLETE (raw text: '" + text.trim() + "')");
                         return new QueueInfo(troopType, QueueStatus.COMPLETE, null);
                     }
                 }
@@ -542,16 +596,19 @@ public class TrainingTask extends DelayedTask {
      * Tries multiple OCR configurations to handle different text formats.
      * If successful, returns TRAINING status with the completion time.
      * 
-     * @param queueArea     Screen area to check
-     * @param troopType     Type of troop for logging
-     * @param settingsToTry Array of OCR settings to attempt
+     * @param queueAreaScreen area to check
+     * @param troopType Type of troop for logging
      * @return QueueInfo with TRAINING status and time, or UNKNOWN if extraction
      *         fails
      */
-    private QueueInfo checkForTrainingTime(
-            DTOArea queueArea,
-            TroopType troopType,
-            DTOTesseractSettings[] settingsToTry) {
+    private QueueInfo checkForTrainingTime(DTOArea queueArea, TroopType troopType) {
+        DTOTesseractSettings[] settingsToTry = {
+                WHITE_DURATION,
+                WHITE_SETTINGS,
+                WHITE_NUMBERS,
+                ORANGE_SETTINGS,
+                GREEN_TEXT_SETTINGS
+        };
 
         for (DTOTesseractSettings settings : settingsToTry) {
             try {
@@ -676,14 +733,14 @@ public class TrainingTask extends DelayedTask {
      * Filters queues to find those ready for training.
      * 
      * <p>
-     * Ready queues are those with status COMPLETE or IDLE.
+     * Ready queues are those with status COMPLETE, IDLE, or UNKNOWN (as a fallback).
      * 
      * @param queues List of analyzed queues
      * @return List containing only queues ready for training
      */
     private List<QueueInfo> filterReadyQueues(List<QueueInfo> queues) {
         return queues.stream()
-                .filter(q -> q.status() == QueueStatus.COMPLETE || q.status() == QueueStatus.IDLE)
+                .filter(q -> q.status() == QueueStatus.COMPLETE || q.status() == QueueStatus.IDLE || q.status() == QueueStatus.UNKNOWN)
                 .toList();
     }
 
