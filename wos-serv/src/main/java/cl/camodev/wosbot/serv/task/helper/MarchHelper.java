@@ -79,6 +79,42 @@ public class MarchHelper {
         openLeftMenuCitySection(false); // Open wilderness tab
         
         try {
+            DTOTesseractSettings settings = DTOTesseractSettings.builder()
+                    .setOcrEngineMode(DTOTesseractSettings.OcrEngineMode.LSTM)
+                    .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ130")
+                    .setDebug(true)
+                    .build();
+
+            DTOPoint panelTopLeft = new DTOPoint(10, 340);
+            DTOPoint panelBottomRight = new DTOPoint(435, 772);
+
+            for (int attempt = 0; attempt < OCR_RETRY_ATTEMPTS; attempt++) {
+                String ocrResult = emuManager.ocrRegionText(
+                        emulatorNumber,
+                        panelTopLeft,
+                        panelBottomRight,
+                        settings
+                );
+
+                if (ocrResult != null) {
+                    String lower = ocrResult.toLowerCase().trim();
+                    logger.info("Wilderness march panel OCR (attempt " + (attempt + 1) + "/" + OCR_RETRY_ATTEMPTS + ") raw result: '" + ocrResult + "'");
+
+                    if (lower.contains("idle") || lower.contains("1dle") || lower.contains("ldle") || lower.contains("id1e") || lower.contains("idie")) {
+                        logger.info("Idle march detected in wilderness panel OCR");
+                        closeLeftMenu();
+                        return true;
+                    }
+                } else {
+                    logger.info("Wilderness march panel OCR (attempt " + (attempt + 1) + "/" + OCR_RETRY_ATTEMPTS + ") result: null");
+                }
+
+                if (attempt < OCR_RETRY_ATTEMPTS - 1) {
+                    Thread.sleep(150);
+                }
+            }
+
+            // Secondary check: individual slot rows
             for (int marchSlot = 0; marchSlot < TOTAL_MARCH_SLOTS; marchSlot++) {
                 if (isMarchSlotIdle(marchSlot)) {
                     int slotNumber = TOTAL_MARCH_SLOTS - marchSlot;
@@ -86,9 +122,6 @@ public class MarchHelper {
                     closeLeftMenu();
                     return true;
                 }
-                
-                int slotNumber = TOTAL_MARCH_SLOTS - marchSlot;
-                logger.debug("March slot " + slotNumber + " is not idle");
             }
         } catch (Exception e) {
             logger.error("Error while checking marches: " + e.getMessage());
@@ -96,7 +129,7 @@ public class MarchHelper {
             return false;
         }
         
-        logger.info("No idle marches detected in any of the " + TOTAL_MARCH_SLOTS + " slots");
+        logger.info("No idle marches detected in wilderness panel or individual slots");
         closeLeftMenu();
         return false;
     }
@@ -115,7 +148,6 @@ public class MarchHelper {
         DTOPoint bottomRight = CommonGameAreas.MARCH_SLOTS_BOTTOM_RIGHT[slotIndex];
         
         DTOTesseractSettings settings = DTOTesseractSettings.builder()
-                .setPageSegMode(DTOTesseractSettings.PageSegMode.SINGLE_LINE)
                 .setOcrEngineMode(DTOTesseractSettings.OcrEngineMode.LSTM)
                 .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ130")
                 .setDebug(true)

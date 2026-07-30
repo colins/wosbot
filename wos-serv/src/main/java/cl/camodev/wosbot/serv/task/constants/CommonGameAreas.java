@@ -83,12 +83,12 @@ public interface CommonGameAreas {
          * Ordered from slot 6 (top) to slot 1 (bottom).
          */
         DTOPoint[] MARCH_SLOTS_TOP_LEFT = {
-                        new DTOPoint(189, 740), // March 6
-                        new DTOPoint(189, 667), // March 5
-                        new DTOPoint(189, 594), // March 4
-                        new DTOPoint(189, 521), // March 3
-                        new DTOPoint(189, 448), // March 2
-                        new DTOPoint(189, 375) // March 1
+                        new DTOPoint(10, 740), // March 6
+                        new DTOPoint(10, 667), // March 5
+                        new DTOPoint(10, 594), // March 4
+                        new DTOPoint(10, 521), // March 3
+                        new DTOPoint(10, 448), // March 2
+                        new DTOPoint(10, 375) // March 1
         };
 
         /**
@@ -96,12 +96,12 @@ public interface CommonGameAreas {
          * Ordered from slot 6 (top) to slot 1 (bottom).
          */
         DTOPoint[] MARCH_SLOTS_BOTTOM_RIGHT = {
-                        new DTOPoint(258, 768), // March 6
-                        new DTOPoint(258, 695), // March 5
-                        new DTOPoint(258, 622), // March 4
-                        new DTOPoint(258, 549), // March 3
-                        new DTOPoint(258, 476), // March 2
-                        new DTOPoint(258, 403) // March 1
+                        new DTOPoint(435, 768), // March 6
+                        new DTOPoint(435, 695), // March 5
+                        new DTOPoint(435, 622), // March 4
+                        new DTOPoint(435, 549), // March 3
+                        new DTOPoint(435, 476), // March 2
+                        new DTOPoint(435, 403) // March 1
         };
 
         // ========================================================================
