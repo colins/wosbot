@@ -118,6 +118,7 @@ public class MarchHelper {
                 .setPageSegMode(DTOTesseractSettings.PageSegMode.SINGLE_LINE)
                 .setOcrEngineMode(DTOTesseractSettings.OcrEngineMode.LSTM)
                 .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ130")
+                .setDebug(true)
                 .build();
 
         for (int attempt = 0; attempt < OCR_RETRY_ATTEMPTS; attempt++) {

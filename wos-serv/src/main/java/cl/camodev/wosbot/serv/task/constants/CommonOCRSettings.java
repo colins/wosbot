@@ -66,6 +66,7 @@ public interface CommonOCRSettings {
                         .setRemoveBackground(true)
                         .setTextColor(new Color(254, 254, 254))
                         .setAllowedChars("0123456789")
+                        .setDebug(true)
                         .build();
 
         // ========================================================================
@@ -87,6 +88,7 @@ public interface CommonOCRSettings {
                         .setPageSegMode(DTOTesseractSettings.PageSegMode.SINGLE_LINE)
                         .setOcrEngineMode(DTOTesseractSettings.OcrEngineMode.LSTM)
                         .setAllowedChars("0123456789:")
+                        .setDebug(true)
                         .build();
 
         // ========================================================================
