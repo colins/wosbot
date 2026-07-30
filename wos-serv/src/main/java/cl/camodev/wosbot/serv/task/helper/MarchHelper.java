@@ -6,6 +6,7 @@ import cl.camodev.wosbot.emulator.EmulatorManager;
 import cl.camodev.wosbot.logging.ProfileLogger;
 import cl.camodev.wosbot.ot.DTOPoint;
 import cl.camodev.wosbot.ot.DTOProfiles;
+import cl.camodev.wosbot.ot.DTOTesseractSettings;
 import cl.camodev.wosbot.serv.task.constants.CommonGameAreas;
 import net.sourceforge.tess4j.TesseractException;
 
@@ -113,16 +114,26 @@ public class MarchHelper {
         DTOPoint topLeft = CommonGameAreas.MARCH_SLOTS_TOP_LEFT[slotIndex];
         DTOPoint bottomRight = CommonGameAreas.MARCH_SLOTS_BOTTOM_RIGHT[slotIndex];
         
+        DTOTesseractSettings settings = DTOTesseractSettings.builder()
+                .setPageSegMode(DTOTesseractSettings.PageSegMode.SINGLE_LINE)
+                .setOcrEngineMode(DTOTesseractSettings.OcrEngineMode.LSTM)
+                .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ130")
+                .build();
+
         for (int attempt = 0; attempt < OCR_RETRY_ATTEMPTS; attempt++) {
             try {
                 String ocrResult = emuManager.ocrRegionText(
                         emulatorNumber,
                         topLeft,
-                        bottomRight
+                        bottomRight,
+                        settings
                 );
                 
-                if (ocrResult != null && ocrResult.toLowerCase().contains("idle")) {
-                    return true;
+                if (ocrResult != null) {
+                    String lower = ocrResult.toLowerCase().trim();
+                    if (lower.contains("idle") || lower.contains("1dle") || lower.contains("ldle") || lower.contains("id1e") || lower.contains("idie")) {
+                        return true;
+                    }
                 }
                 
                 if (attempt < OCR_RETRY_ATTEMPTS - 1) {
@@ -226,6 +237,12 @@ public class MarchHelper {
                     3,      // Multiple taps for reliability
                     100     // Short delay between taps
             );
+        }
+
+        try {
+            Thread.sleep(500); // Wait for menu opening/transition
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
