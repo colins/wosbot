@@ -9,6 +9,7 @@ import cl.camodev.utiles.time.TimeValidators;
 import cl.camodev.wosbot.console.enumerable.EnumTpMessageSeverity;
 import cl.camodev.wosbot.emulator.EmulatorManager;
 import cl.camodev.wosbot.logging.ProfileLogger;
+import cl.camodev.wosbot.ot.DTOPoint;
 import cl.camodev.wosbot.ot.DTOProfiles;
 import cl.camodev.wosbot.serv.impl.ServLogs;
 import cl.camodev.wosbot.serv.impl.StaminaService;
