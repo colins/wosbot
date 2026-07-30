@@ -1041,11 +1041,18 @@ public class TrainingTask extends DelayedTask {
         logInfo("Preparing to train " + queue.type().name());
         tapRandomPoint(areaToTap.topLeft(), areaToTap.bottomRight(), 1, 500);
 
-        // Wait for camera pan animation and building popup to settle
+        // Wait for left menu to close and camera pan animation to center building
         sleepTask(800);
 
+        // Try opening interface if building was auto-selected by left menu tap
         if (!openTrainingInterface()) {
-            return handleTrainingButtonNotFound(queue);
+            logDebug("Training button not immediately visible. Tapping centered building in city view.");
+            tapRandomPoint(TRAINING_CAMP_TAP_MIN, TRAINING_CAMP_TAP_MAX, 2, 300);
+            sleepTask(500);
+
+            if (!openTrainingInterface()) {
+                return handleTrainingButtonNotFound(queue);
+            }
         }
 
         // dismissPopups();
