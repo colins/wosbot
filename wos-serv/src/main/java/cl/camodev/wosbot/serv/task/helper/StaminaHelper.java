@@ -157,22 +157,39 @@ public class StaminaHelper {
      * @return The stamina cost, or null if OCR failed
      */
     public Integer getSpentStamina() {
-        Integer spentStamina = integerHelper.execute(
-                CommonGameAreas.SPENT_STAMINA_OCR_AREA.topLeft(),
-                CommonGameAreas.SPENT_STAMINA_OCR_AREA.bottomRight(),
-                5, // Max retry attempts
-                200L, // Delay between retries
-                CommonOCRSettings.SPENT_STAMINA_SETTINGS,
-                text -> NumberValidators.matchesPattern(text, CommonOCRSettings.NUMBER_PATTERN),
-                text -> NumberConverters.regexToInt(text, CommonOCRSettings.NUMBER_PATTERN));
+        DTOPoint topLeft = CommonGameAreas.SPENT_STAMINA_OCR_AREA.topLeft();
+        DTOPoint bottomRight = CommonGameAreas.SPENT_STAMINA_OCR_AREA.bottomRight();
 
-        if (spentStamina != null) {
-            logDebug("Spent stamina: " + spentStamina);
-        } else {
-            logDebug("Failed to read spent stamina from deployment screen");
+        for (int attempt = 0; attempt < 5; attempt++) {
+            try {
+                String raw = emuManager.ocrRegionText(
+                        emulatorNumber,
+                        topLeft,
+                        bottomRight,
+                        CommonOCRSettings.SPENT_STAMINA_SETTINGS
+                );
+
+                if (raw != null) {
+                    logInfo("Spent stamina OCR (attempt " + (attempt + 1) + "/5) raw result: '" + raw + "'");
+                    if (NumberValidators.matchesPattern(raw, CommonOCRSettings.NUMBER_PATTERN)) {
+                        Integer spentStamina = NumberConverters.regexToInt(raw, CommonOCRSettings.NUMBER_PATTERN);
+                        if (spentStamina != null) {
+                            logInfo("Parsed spent stamina cost: " + spentStamina);
+                            return spentStamina;
+                        }
+                    }
+                }
+
+                if (attempt < 4) {
+                    Thread.sleep(200);
+                }
+            } catch (Exception e) {
+                logDebug("Spent stamina OCR attempt " + (attempt + 1) + " failed: " + e.getMessage());
+            }
         }
 
-        return spentStamina;
+        logWarning("Failed to read spent stamina from deployment screen");
+        return null;
     }
 
     /**
@@ -349,35 +366,58 @@ public class StaminaHelper {
      * @return Travel time in seconds, or 0 if OCR failed
      */
     public long parseTravelTime() {
-        Duration marchingTime = durationHelper.execute(
-                CommonGameAreas.TRAVEL_TIME_OCR_AREA.topLeft(),
-                CommonGameAreas.TRAVEL_TIME_OCR_AREA.bottomRight(),
-                3, // Max retry attempts
-                200L, // Delay between retries
-                CommonOCRSettings.TRAVEL_TIME_SETTINGS,
-                TimeValidators::isValidTime,
-                TimeConverters::toDuration);
+        DTOPoint topLeft = CommonGameAreas.TRAVEL_TIME_OCR_AREA.topLeft();
+        DTOPoint bottomRight = CommonGameAreas.TRAVEL_TIME_OCR_AREA.bottomRight();
+        int maxRetries = 3;
 
-        if (marchingTime != null) {
-            long seconds = marchingTime.getSeconds();
+        logInfo("Reading march travel time via OCR from area (" +
+                topLeft.getX() + "," + topLeft.getY() + ") to (" +
+                bottomRight.getX() + "," + bottomRight.getY() + ")");
 
-            // Game travel time format on march screen is 00:MM:SS or MM:SS.
-            // OCR frequently misreads leading "00" hours as "10" or "01", resulting in >= 3600 seconds.
-            if (seconds >= 3600) {
-                long adjustedSeconds = seconds % 3600;
-                logDebug("Stripped misread hours from travel time: " + seconds + "s -> " + adjustedSeconds + "s");
-                seconds = adjustedSeconds;
+        for (int attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                String raw = emuManager.ocrRegionText(
+                        emulatorNumber,
+                        topLeft,
+                        bottomRight,
+                        CommonOCRSettings.TRAVEL_TIME_SETTINGS
+                );
+
+                logInfo("Travel time OCR (attempt " + (attempt + 1) + "/" + maxRetries + ") raw result: '" + raw + "'");
+
+                if (raw != null && TimeValidators.isValidTime(raw)) {
+                    Duration marchingTime = TimeConverters.toDuration(raw);
+                    if (marchingTime != null) {
+                        long seconds = marchingTime.getSeconds();
+
+                        // Game travel time format on march screen is 00:MM:SS or MM:SS.
+                        // OCR frequently misreads leading "00" hours as "10" or "01", resulting in >= 3600 seconds.
+                        if (seconds >= 3600) {
+                            long adjustedSeconds = seconds % 3600;
+                            logInfo("Adjusted misread hours in travel time: " + seconds + "s -> " + adjustedSeconds + "s");
+                            seconds = adjustedSeconds;
+                        }
+
+                        if (seconds > 0 && seconds <= 1800) {
+                            logInfo("Parsed valid travel time: " + seconds + " seconds (from '" + raw + "')");
+                            return seconds;
+                        } else {
+                            logWarning("Parsed travel time out of valid range (" + seconds + "s) from '" + raw + "'");
+                        }
+                    }
+                } else {
+                    logInfo("Travel time OCR string '" + (raw != null ? raw : "null") + "' failed time validation");
+                }
+
+                if (attempt < maxRetries - 1) {
+                    Thread.sleep(200);
+                }
+            } catch (Exception e) {
+                logWarning("Travel time OCR attempt " + (attempt + 1) + " failed with exception: " + e.getMessage());
             }
-
-            if (seconds > 1800 || seconds <= 0) {
-                logWarning("Parsed invalid travel time (" + seconds + "s). Treating as OCR error.");
-                return 0;
-            }
-            logDebug("Travel time: " + seconds + " seconds");
-            return seconds;
         }
 
-        logWarning("Failed to parse travel time");
+        logWarning("Failed to parse travel time via OCR after " + maxRetries + " attempts");
         return 0;
     }
 

@@ -131,16 +131,19 @@ public class MarchHelper {
                 
                 if (ocrResult != null) {
                     String lower = ocrResult.toLowerCase().trim();
+                    logger.info("March slot " + (TOTAL_MARCH_SLOTS - slotIndex) + " OCR (attempt " + (attempt + 1) + "/" + OCR_RETRY_ATTEMPTS + ") raw result: '" + ocrResult + "'");
                     if (lower.contains("idle") || lower.contains("1dle") || lower.contains("ldle") || lower.contains("id1e") || lower.contains("idie")) {
                         return true;
                     }
+                } else {
+                    logger.info("March slot " + (TOTAL_MARCH_SLOTS - slotIndex) + " OCR (attempt " + (attempt + 1) + "/" + OCR_RETRY_ATTEMPTS + ") result: null");
                 }
                 
                 if (attempt < OCR_RETRY_ATTEMPTS - 1) {
                     Thread.sleep(100); // Brief delay before retry
                 }
             } catch (IOException | TesseractException e) {
-                logger.debug("OCR attempt " + (attempt + 1) + " failed for slot " + 
+                logger.warn("OCR attempt " + (attempt + 1) + " failed for slot " + 
                            slotIndex + ": " + e.getMessage());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -190,10 +193,10 @@ public class MarchHelper {
         );
         
         if (flagStatus != null && flagStatus.toLowerCase().contains("unlock")) {
-            logger.warn("Flag " + flagNumber + " is locked. Proceeding without flag selection.");
+            logger.warn("Flag " + flagNumber + " is locked (OCR read '" + flagStatus + "'). Proceeding without flag selection.");
             emuManager.tapBackButton(emulatorNumber);
         } else {
-            logger.debug("Flag " + flagNumber + " selected successfully");
+            logger.info("Flag " + flagNumber + " selected successfully (OCR check '" + (flagStatus != null ? flagStatus : "none/unlocked") + "')");
         }
     }
 
