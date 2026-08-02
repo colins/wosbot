@@ -399,7 +399,7 @@ public class StaminaHelper {
                             seconds = adjustedSeconds;
                         }
 
-                        if (seconds > 0 && seconds <= 1800) {
+                        if (seconds >= 15 && seconds <= 1800) {
                             logInfo("Parsed valid travel time: " + seconds + " seconds (from '" + raw + "')");
                             return seconds;
                         } else {

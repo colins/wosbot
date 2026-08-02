@@ -222,6 +222,12 @@ public final class TimeConverters {
                 return null;
             }
 
+            // If minutes == 0 and seconds < 15, this is 0 hours and XX minutes (HH:MM)
+            // e.g. "00:02" -> 0 hours 2 minutes (120s) instead of 0 minutes 2 seconds (2s)
+            if (minutes == 0 && seconds < 15 && seconds > 0) {
+                return Duration.ofMinutes(seconds);
+            }
+
             return Duration.ofMinutes(minutes).plusSeconds(seconds);
         } catch (Exception e) {
             return null;

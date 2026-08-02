@@ -86,6 +86,12 @@ public class PolarTerrorHuntingTask extends DelayedTask {
 
         // No-flag mode: Send multiple rallies
         logInfo("Starting rally loop (no-flag mode)");
+
+        // Check limited hunting limit before starting loop
+        if (limitedHunting && !polarsRemaining(polarTerrorLevel)) {
+            return; // Already rescheduled in polarsRemaining
+        }
+
         int ralliesDeployed = 0;
         while (true) {
             // Check marches before each rally
@@ -93,11 +99,6 @@ public class PolarTerrorHuntingTask extends DelayedTask {
                 logInfo("No marches available after " + ralliesDeployed + " rallies. Waiting for marches to return.");
                 reschedule(LocalDateTime.now().plusMinutes(1));
                 return;
-            }
-
-            // Check limited hunting limit
-            if (limitedHunting && !polarsRemaining(polarTerrorLevel)) {
-                return; // Already rescheduled in polarsRemaining
             }
 
             int result = launchSingleRally(polarTerrorLevel, false, 0);
@@ -252,7 +253,7 @@ public class PolarTerrorHuntingTask extends DelayedTask {
         if (result == -1) {
             if (useFlag) {
                 logWarning("March deployed with flag but travel time unknown. Using fallback reschedule.");
-                reschedule(LocalDateTime.now().plusMinutes(10));
+                reschedule(LocalDateTime.now().plusMinutes(12));
             } else {
                 reschedule(LocalDateTime.now().plusMinutes(5));
             }
@@ -346,6 +347,8 @@ public class PolarTerrorHuntingTask extends DelayedTask {
 
     private boolean polarsRemaining(int polarLevel) {
         if (!openPolarsMenu(polarLevel)) {
+            logWarning("Failed to open polars menu when checking remaining hunts. Rescheduling in 5 minutes.");
+            reschedule(LocalDateTime.now().plusMinutes(5));
             return false;
         }
 
@@ -358,6 +361,8 @@ public class PolarTerrorHuntingTask extends DelayedTask {
         sleepTask(500);
 
         if (!magnifyingGlass.isFound()) {
+            logWarning("Magnifying glass icon not found when checking remaining hunts. Rescheduling in 5 minutes.");
+            reschedule(LocalDateTime.now().plusMinutes(5));
             return false;
         }
 

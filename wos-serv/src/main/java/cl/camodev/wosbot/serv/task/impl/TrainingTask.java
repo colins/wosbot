@@ -63,16 +63,16 @@ public class TrainingTask extends DelayedTask {
     // ===============================
 
     private static final DTOArea INFANTRY_AREA = new DTOArea(
-            new DTOPoint(161, 563),
-            new DTOPoint(289, 588));
+            new DTOPoint(140, 555),
+            new DTOPoint(310, 610));
 
     private static final DTOArea LANCER_AREA = new DTOArea(
-            new DTOPoint(161, 636),
-            new DTOPoint(289, 664));
+            new DTOPoint(140, 625),
+            new DTOPoint(310, 680));
 
     private static final DTOArea MARKSMAN_AREA = new DTOArea(
-            new DTOPoint(161, 708),
-            new DTOPoint(289, 739));
+            new DTOPoint(140, 698),
+            new DTOPoint(310, 753));
 
     private static final DTOPoint TRAINING_CAMP_TAP_MIN = new DTOPoint(310, 650);
     private static final DTOPoint TRAINING_CAMP_TAP_MAX = new DTOPoint(450, 730);
