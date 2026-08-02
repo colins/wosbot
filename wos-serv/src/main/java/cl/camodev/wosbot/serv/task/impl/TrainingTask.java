@@ -18,6 +18,7 @@ import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static cl.camodev.wosbot.console.enumerable.EnumConfigurationKey.*;
@@ -510,6 +511,18 @@ public class TrainingTask extends DelayedTask {
         return checkForTrainingTime(queueArea, troopType);
     }
 
+    private static final Pattern TIME_FORMAT_PATTERN = Pattern.compile("(\\d{1,2}:\\d{2}:\\d{2}|\\d{1,2}:\\d{2})");
+
+    private boolean isKnownStateKeyword(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return false;
+        }
+        String trimmed = text.trim();
+        String lowerRaw = trimmed.toLowerCase();
+        String cleaned = trimmed.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        return isIdleText(lowerRaw, cleaned) || isUpgradingText(lowerRaw, cleaned) || isCompleteText(lowerRaw, cleaned);
+    }
+
     private boolean isIdleText(String lowerRaw, String cleaned) {
         return cleaned.contains("idle") || cleaned.contains("1dle") || cleaned.contains("ldle")
                 || cleaned.contains("idie") || cleaned.contains("id1e") || cleaned.contains("1d1e")
@@ -562,7 +575,7 @@ public class TrainingTask extends DelayedTask {
                         1,
                         300L,
                         settings,
-                        s -> s != null && !s.trim().isEmpty(),
+                        this::isKnownStateKeyword,
                         s -> s);
 
                 if (text != null && !text.trim().isEmpty()) {
@@ -618,21 +631,25 @@ public class TrainingTask extends DelayedTask {
 
         for (DTOTesseractSettings settings : settingsToTry) {
             try {
-                LocalDateTime readyAt = trainingTimeHelper.execute(
-                        queueArea,
-                        3,
-                        10,
+                String rawText = stringHelper.execute(
+                        queueArea.topLeft(),
+                        queueArea.bottomRight(),
+                        1,
+                        300L,
                         settings,
-                        TimeValidators::isValidTime,
-                        text -> LocalDateTime.now().plus(TimeConverters.toDuration(text)));
+                        s -> s != null && TIME_FORMAT_PATTERN.matcher(s).find(),
+                        s -> s);
 
-                if (readyAt != null) {
-                    long daysDiff = Duration.between(LocalDateTime.now(), readyAt).toDays();
-                    if (daysDiff >= 0 && daysDiff < 30) {
-                        logInfo(troopType + " training ready at: " + readyAt.format(DATETIME_FORMATTER));
-                        return new QueueInfo(troopType, QueueStatus.TRAINING, readyAt);
-                    } else {
-                        logWarning("Discarding unrealistic ready time (" + readyAt.format(DATETIME_FORMATTER) + ") for " + troopType);
+                if (rawText != null) {
+                    Matcher matcher = TIME_FORMAT_PATTERN.matcher(rawText);
+                    if (matcher.find()) {
+                        String cleanTime = matcher.group(1);
+                        Duration duration = TimeConverters.toDuration(cleanTime);
+                        if (duration != null && duration.toHours() <= 48) {
+                            LocalDateTime readyAt = LocalDateTime.now().plus(duration);
+                            logInfo(troopType + " training ready at: " + readyAt.format(DATETIME_FORMATTER) + " (parsed from '" + rawText.trim() + "')");
+                            return new QueueInfo(troopType, QueueStatus.TRAINING, readyAt);
+                        }
                     }
                 }
             } catch (Exception e) {
