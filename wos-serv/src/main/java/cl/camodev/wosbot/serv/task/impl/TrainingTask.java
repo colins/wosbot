@@ -375,9 +375,9 @@ public class TrainingTask extends DelayedTask {
 
         emuManager.captureScreenshotViaADB(EMULATOR_NUMBER);
 
-        for (int i = 0; i < queuesToCheck.size(); i++) {
-            DTOArea queueArea = queuesToCheck.get(i);
+        for (int i = 0; i < enabledTroopTypes.size(); i++) {
             TroopType troopType = enabledTroopTypes.get(i);
+            DTOArea queueArea = getQueueArea(troopType);
 
             logInfo("Analyzing queue for " + troopType.name());
             QueueInfo queueInfo = analyzeQueueState(queueArea, troopType);
@@ -455,7 +455,7 @@ public class TrainingTask extends DelayedTask {
 
         for (int queueIndex : unknownIndices) {
             TroopType troopType = enabledTroopTypes.get(queueIndex);
-            DTOArea queueArea = queuesToCheck.get(queueIndex);
+            DTOArea queueArea = getQueueArea(troopType);
 
             logDebug("Retrying queue: " + troopType.name());
 
@@ -1441,6 +1441,7 @@ public class TrainingTask extends DelayedTask {
 
         if (maxLevel == -1) {
             logWarning("No troop levels detected. Falling back to normal training.");
+            selectHighestTroopLevel(queue.type());
             clickTrainButton();
             return;
         }
@@ -1454,6 +1455,7 @@ public class TrainingTask extends DelayedTask {
             logInfo("Promotion executed successfully.");
         } else {
             logInfo("No promotable troops found. Executing normal training.");
+            selectHighestTroopLevel(queue.type());
             clickTrainButton();
         }
     }
