@@ -11,7 +11,7 @@ public interface LeftMenuTextSettings {
                         .setRemoveBackground(true)
                         .setTextColor(new Color(255, 255, 255))
                         .setReuseLastImage(true)
-                        .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+                        .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
                         .build();
 
         DTOTesseractSettings WHITE_DURATION = DTOTesseractSettings.builder()
@@ -26,7 +26,7 @@ public interface LeftMenuTextSettings {
                         .setRemoveBackground(true)
                         .setTextColor(new Color(0, 193, 0))
                         .setReuseLastImage(true)
-                        .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+                        .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
                         .build();
 
         DTOTesseractSettings WHITE_NUMBERS = DTOTesseractSettings.builder()
@@ -53,7 +53,7 @@ public interface LeftMenuTextSettings {
                         .setRemoveBackground(true)
                         .setTextColor(new Color(237, 138, 33))
                         .setReuseLastImage(true)
-                        .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+                        .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
                         .build();
 
 }

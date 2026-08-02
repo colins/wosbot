@@ -120,27 +120,27 @@ public class TrainingTask extends DelayedTask {
             .setRemoveBackground(true)
             .setTextColor(new Color(255, 255, 255))
             .setReuseLastImage(true)
-            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
             .build();
 
     private static final DTOTesseractSettings STATE_TEXT_ORANGE = DTOTesseractSettings.builder()
             .setRemoveBackground(true)
             .setTextColor(new Color(237, 138, 33))
             .setReuseLastImage(true)
-            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
             .build();
 
     private static final DTOTesseractSettings STATE_TEXT_GREEN = DTOTesseractSettings.builder()
             .setRemoveBackground(true)
             .setTextColor(new Color(0, 193, 0))
             .setReuseLastImage(true)
-            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
             .build();
 
     private static final DTOTesseractSettings STATE_TEXT_ANY = DTOTesseractSettings.builder()
             .setRemoveBackground(false)
             .setReuseLastImage(true)
-            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+            .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
             .build();
 
     private static final int MAX_QUEUE_STATUS_RETRIES = 3;
@@ -506,34 +506,30 @@ public class TrainingTask extends DelayedTask {
         return checkForTrainingTime(queueArea, troopType);
     }
 
-    private boolean isKnownStateKeyword(String text) {
-        if (text == null || text.trim().isEmpty()) {
-            return false;
-        }
-        String lower = text.trim().toLowerCase();
-        return isIdleText(lower) || isUpgradingText(lower) || isCompleteText(lower);
+    private boolean isIdleText(String lowerRaw, String cleaned) {
+        return cleaned.contains("idle") || cleaned.contains("1dle") || cleaned.contains("ldle")
+                || cleaned.contains("idie") || cleaned.contains("id1e") || cleaned.contains("1d1e")
+                || cleaned.contains("i0le") || cleaned.contains("i1de") || cleaned.contains("i1dle")
+                || cleaned.contains("dle") || cleaned.contains("ide") || cleaned.contains("idl")
+                || cleaned.contains("free") || cleaned.contains("fr3e")
+                || cleaned.contains("train") || cleaned.contains("tr1an") || cleaned.contains("tr4in")
+                || cleaned.contains("recruit") || cleaned.contains("open") || cleaned.contains("avail")
+                || lowerRaw.contains("idle") || lowerRaw.contains("free") || lowerRaw.contains("train")
+                || lowerRaw.contains("tap");
     }
 
-    private boolean isIdleText(String lower) {
-        return lower.contains("idle") || lower.contains("1dle")
-                || lower.contains("ldle") || lower.contains("idie")
-                || lower.contains("id1e") || lower.contains("1d1e")
-                || lower.contains("i0le") || lower.contains("i1de")
-                || lower.contains("i1dle") || lower.contains("dle");
+    private boolean isUpgradingText(String lowerRaw, String cleaned) {
+        return cleaned.contains("upgrading") || cleaned.contains("upgrade") || cleaned.contains("upgrad")
+                || cleaned.contains("upgrad1ng") || cleaned.contains("upgradin") || cleaned.contains("upgrd")
+                || lowerRaw.contains("upgrad");
     }
 
-    private boolean isUpgradingText(String lower) {
-        return lower.contains("upgrading") || lower.contains("upgrade")
-                || lower.contains("upgrad") || lower.contains("upgrad1ng")
-                || lower.contains("upgradin");
-    }
-
-    private boolean isCompleteText(String lower) {
-        return lower.contains("complete") || lower.contains("comp1ete")
-                || lower.contains("complet") || lower.contains("compl3te")
-                || lower.contains("c0mplete") || lower.contains("claim")
-                || lower.contains("finished") || lower.contains("ready")
-                || lower.contains("collect") || lower.contains("tap");
+    private boolean isCompleteText(String lowerRaw, String cleaned) {
+        return cleaned.contains("complete") || cleaned.contains("comp1ete") || cleaned.contains("complet")
+                || cleaned.contains("compl3te") || cleaned.contains("c0mplete") || cleaned.contains("claim")
+                || cleaned.contains("finished") || cleaned.contains("ready") || cleaned.contains("collect")
+                || cleaned.contains("tap") || cleaned.contains("done") || cleaned.contains("finish")
+                || lowerRaw.contains("complete") || lowerRaw.contains("claim") || lowerRaw.contains("collect");
     }
 
     /**
@@ -562,24 +558,28 @@ public class TrainingTask extends DelayedTask {
                         1,
                         300L,
                         settings,
-                        this::isKnownStateKeyword,
+                        s -> s != null && !s.trim().isEmpty(),
                         s -> s);
 
                 if (text != null && !text.trim().isEmpty()) {
-                    String lowerText = text.trim().toLowerCase();
+                    String trimmed = text.trim();
+                    String lowerRaw = trimmed.toLowerCase();
+                    String cleaned = trimmed.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
 
-                    if (isIdleText(lowerText)) {
-                        logInfo(troopType + " queue is IDLE (raw text: '" + text.trim() + "')");
+                    logDebug("State OCR for " + troopType + " raw: '" + trimmed + "', cleaned: '" + cleaned + "'");
+
+                    if (isIdleText(lowerRaw, cleaned)) {
+                        logInfo(troopType + " queue is IDLE (raw text: '" + trimmed + "')");
                         return new QueueInfo(troopType, QueueStatus.IDLE, null);
                     }
 
-                    if (isUpgradingText(lowerText)) {
-                        logInfo(troopType + " queue is UPGRADING (raw text: '" + text.trim() + "')");
+                    if (isUpgradingText(lowerRaw, cleaned)) {
+                        logInfo(troopType + " queue is UPGRADING (raw text: '" + trimmed + "')");
                         return new QueueInfo(troopType, QueueStatus.UPGRADING, null);
                     }
 
-                    if (isCompleteText(lowerText)) {
-                        logInfo(troopType + " queue is COMPLETE (raw text: '" + text.trim() + "')");
+                    if (isCompleteText(lowerRaw, cleaned)) {
+                        logInfo(troopType + " queue is COMPLETE (raw text: '" + trimmed + "')");
                         return new QueueInfo(troopType, QueueStatus.COMPLETE, null);
                     }
                 }
@@ -623,8 +623,13 @@ public class TrainingTask extends DelayedTask {
                         text -> LocalDateTime.now().plus(TimeConverters.toDuration(text)));
 
                 if (readyAt != null) {
-                    logInfo(troopType + " training ready at: " + readyAt.format(DATETIME_FORMATTER));
-                    return new QueueInfo(troopType, QueueStatus.TRAINING, readyAt);
+                    long daysDiff = Duration.between(LocalDateTime.now(), readyAt).toDays();
+                    if (daysDiff >= 0 && daysDiff < 30) {
+                        logInfo(troopType + " training ready at: " + readyAt.format(DATETIME_FORMATTER));
+                        return new QueueInfo(troopType, QueueStatus.TRAINING, readyAt);
+                    } else {
+                        logWarning("Discarding unrealistic ready time (" + readyAt.format(DATETIME_FORMATTER) + ") for " + troopType);
+                    }
                 }
             } catch (Exception e) {
                 logWarning("Error extracting training time: " + e.getMessage());
@@ -1645,7 +1650,7 @@ public class TrainingTask extends DelayedTask {
                     3,
                     200L,
                     DTOTesseractSettings.builder()
-                            .setAllowedChars("0123456789")
+                            .setAllowedChars("0123456789:d")
                             .build(),
                     TimeValidators::isValidTime,
                     TimeConverters::toDuration);
@@ -1684,7 +1689,7 @@ public class TrainingTask extends DelayedTask {
                     3,
                     200L,
                     DTOTesseractSettings.builder()
-                            .setAllowedChars("0123456789")
+                            .setAllowedChars("0123456789:d")
                             .build(),
                     TimeValidators::isValidTime,
                     TimeConverters::toDuration);
