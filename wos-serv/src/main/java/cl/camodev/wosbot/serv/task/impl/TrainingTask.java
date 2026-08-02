@@ -121,6 +121,7 @@ public class TrainingTask extends DelayedTask {
             .setTextColor(new Color(255, 255, 255))
             .setReuseLastImage(true)
             .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
+            .setDebug(true)
             .build();
 
     private static final DTOTesseractSettings STATE_TEXT_ORANGE = DTOTesseractSettings.builder()
@@ -128,6 +129,7 @@ public class TrainingTask extends DelayedTask {
             .setTextColor(new Color(237, 138, 33))
             .setReuseLastImage(true)
             .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
+            .setDebug(true)
             .build();
 
     private static final DTOTesseractSettings STATE_TEXT_GREEN = DTOTesseractSettings.builder()
@@ -135,12 +137,14 @@ public class TrainingTask extends DelayedTask {
             .setTextColor(new Color(0, 193, 0))
             .setReuseLastImage(true)
             .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
+            .setDebug(true)
             .build();
 
     private static final DTOTesseractSettings STATE_TEXT_ANY = DTOTesseractSettings.builder()
             .setRemoveBackground(false)
             .setReuseLastImage(true)
             .setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :.-")
+            .setDebug(true)
             .build();
 
     private static final int MAX_QUEUE_STATUS_RETRIES = 3;
