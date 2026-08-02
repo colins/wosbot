@@ -637,11 +637,12 @@ public class TrainingTask extends DelayedTask {
                         1,
                         300L,
                         settings,
-                        s -> s != null && TIME_FORMAT_PATTERN.matcher(s).find(),
+                        s -> s != null && TIME_FORMAT_PATTERN.matcher(s.replaceAll("[.;,\\-_]", ":")).find(),
                         s -> s);
 
                 if (rawText != null) {
-                    Matcher matcher = TIME_FORMAT_PATTERN.matcher(rawText);
+                    String normalized = rawText.replaceAll("[.;,\\-_]", ":");
+                    Matcher matcher = TIME_FORMAT_PATTERN.matcher(normalized);
                     if (matcher.find()) {
                         String cleanTime = matcher.group(1);
                         Duration duration = TimeConverters.toDuration(cleanTime);
@@ -1095,6 +1096,23 @@ public class TrainingTask extends DelayedTask {
      * @return DTOArea for that troop type's queue
      */
     private DTOArea getQueueArea(TroopType type) {
+        EnumTemplates shortcutTemplate = switch (type) {
+            case INFANTRY -> GAME_HOME_SHORTCUTS_INFANTRY;
+            case LANCER -> GAME_HOME_SHORTCUTS_LANCER;
+            case MARKSMAN -> GAME_HOME_SHORTCUTS_MARKSMAN;
+        };
+
+        DTOImageSearchResult shortcut = templateSearchHelper.searchTemplate(
+                shortcutTemplate,
+                SearchConfigConstants.QUICK_SEARCH);
+
+        if (shortcut.isFound()) {
+            DTOPoint pt = shortcut.getPoint();
+            return new DTOArea(
+                    new DTOPoint(pt.getX() + 80, pt.getY() - 20),
+                    new DTOPoint(pt.getX() + 270, pt.getY() + 20));
+        }
+
         return switch (type) {
             case INFANTRY -> INFANTRY_AREA;
             case LANCER -> LANCER_AREA;
@@ -1830,10 +1848,13 @@ public class TrainingTask extends DelayedTask {
 
         if (anyReadyQueueFailed) {
             LocalDateTime retryTime = LocalDateTime.now().plusMinutes(TRAINING_BUTTON_RETRY_MINUTES);
-            if (earliest.isAfter(retryTime)) {
+            if (completionTimes.stream().noneMatch(Objects::nonNull)) {
                 earliest = retryTime;
                 logInfo(String.format("At least one ready queue failed to train. Rescheduling retry in %d minutes at %s.",
                         TRAINING_BUTTON_RETRY_MINUTES,
+                        earliest.format(DATETIME_FORMATTER)));
+            } else {
+                logInfo(String.format("At least one queue failed to train, but other queues are active. Rescheduling to earliest active completion at %s.",
                         earliest.format(DATETIME_FORMATTER)));
             }
         }
